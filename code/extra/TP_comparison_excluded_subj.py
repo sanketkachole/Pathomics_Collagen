@@ -193,11 +193,18 @@ def plot_donor_data_by_age(df, x_col):
 # Example usage
 
 # Load your CSV
-df = pd.read_csv("data/hari_BC/csv/BnW_combined.csv")
+df = pd.read_csv("data/hari_BC/csv/BnW_combined_with_IHC.csv")
 
-plot_donor_data(df, "ZEB1_Positivity")
-plot_donor_data(df, "ZEB1_H-score")
-plot_donor_data(df, "FOXA1_Positivity")
-plot_donor_data(df, "FOXA1_H-score")
-plot_donor_data(df, "Donation Year")
-plot_donor_data_by_age(df, "Stromal_Mean")
+# plot_donor_data(df, "Donation Year")
+# plot_donor_data_by_age(df, "Stromal_Mean")
+
+stains = ["ZEB1_", "FOXA1_", "ELF5 HN1+2_", "ER HN1+2_", "p63 DAK HN1+2_", "CK14 HN1+2_", "EHF HN1+2_", "cKIT HN1+2_"]
+scores = ["Positivity", "H-Score"]
+
+for stain in stains:
+    for score in scores:
+        col_name = f"{stain}{score}"
+        if col_name in df.columns:
+            plot_donor_data(df, col_name)
+        else:
+            print(f"Column {col_name} not found in DataFrame.")
