@@ -22,7 +22,7 @@ def create_rgb_mask(bg_mask, epi_mask, output_path):
     # 1️⃣ Epithelial region (light blue)
     rgb[epi_bin] = (150, 150, 255)
     # 2️⃣ Border around epithelial region (dark blue)
-    rgb[epi_border] = (0, 0, 150)
+    rgb[epi_border] = (255, 255, 150)
     # 3️⃣ Background black region (light red)
     rgb[bg_bin & ~epi_bin & ~epi_border] = (255, 150, 150)
 
