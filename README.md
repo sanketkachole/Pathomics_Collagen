@@ -33,7 +33,7 @@ If you wish to run the whole pipeline at once, you can simply run 'python code/m
 This extracts patches from the whole slide image of size 3000x3000 pixels. Run the python file 'python code/extract_patches.py' (specify the 'input_path' to the location where whole slide images exist and 'output_path' where you want to store the patches (keep it <b>'data/patches'</b>)).<br>
 
 2. <b>Foreground/Background Segemntation</b><br>
-Run 'python code/epithelium_stroma_segmentation_no_model.py' to create patch-wise foreground/background masks of the tissue. Fatty regions are also considered in the background.
+First run 'python code/create_tissue_mask.py' to generate the foreground mask. Which will be used as input into the epithelium segmentation thus subsequentyly run 'python code/epithelium_stroma_segmentation_no_model.py' to create patch-wise foreground/background masks of the tissue. Fatty regions are also considered in the background.
 The white region is the foreground, and the black region is the background.
 
 3. <b>Epithelium segmentation</b><br>
