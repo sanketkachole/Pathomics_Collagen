@@ -3,7 +3,7 @@ File: Main file to extract collagen features at patch level
 """
 
 # header files to load
-from compute_bifs import compute_bifs as compute_bifs
+from compute_bifs import compute_bifs
 import numpy as np
 import cv2
 from skimage import morphology
@@ -40,6 +40,7 @@ def extract_patch_level_features(patches_folder, epi_mask_folder, bg_mask_folder
 
         # FIRST SET OF FEATURES FROM ENTIRE STROMAL AREAS
         # extract collagen fiber mask
+        # FIRST SET OF FEATURES FROM ENTIRE STROMAL AREAS
         frag_thresh = filter_scale * 10
         bifs, _ = compute_bifs(patch, filter_scale, 0.015, 1.5)
         collagen_mask = bifs == feat
@@ -48,11 +49,11 @@ def extract_patch_level_features(patches_folder, epi_mask_folder, bg_mask_folder
         collagen_mask = morphology.remove_small_objects(collagen_mask.astype(bool),
                                                         min_size=frag_thresh)
 
-        stroma_features = extract_collagen_feats(patch, collagen_mask, win_sizes)
+        stroma_dict = extract_collagen_feats(patch, collagen_mask, win_sizes)
+        stroma_features = list(stroma_dict.values())
         features.extend(stroma_features)
 
         # SECOND SET OF FEATURES FROM PERITUMORAL AREAS
-        # get dilated mask
         im_dilated = cv2.imread(os.path.join(epi_mask_folder, file_name),
                                 cv2.IMREAD_GRAYSCALE)
         for index1 in range(0, 15):
@@ -61,20 +62,20 @@ def extract_patch_level_features(patches_folder, epi_mask_folder, bg_mask_folder
         for index1 in range(0, 30):
             im_new = cv2.dilate(im_new, np.ones((5, 5), np.uint8), iterations=1)
 
-        # extract collagen fiber mask
         frag_thresh = filter_scale * 10
         bifs, _ = compute_bifs(patch, filter_scale, 0.015, 1.5)
         collagen_mask = bifs == 5
         collagen_mask = np.logical_and(collagen_mask, im_new)
         collagen_mask = np.logical_and(collagen_mask, 255 - im_dilated)
-        collagen_mask = np.logical_and(collagen_mask, epi_mask)  # Exclude epithelial regions
-        collagen_mask = np.logical_and(collagen_mask, bg_mask)  # Exclude fat regions
+        collagen_mask = np.logical_and(collagen_mask, epi_mask)
+        collagen_mask = np.logical_and(collagen_mask, bg_mask)
         collagen_mask = morphology.remove_small_objects(collagen_mask.astype(bool),
                                                         min_size=frag_thresh)
 
-        # collagen centroid and orientation information extraction
-        peri_tumor_feats = extract_collagen_feats(patch, collagen_mask, win_sizes)
-        features.extend(peri_tumor_feats)
+        peri_dict = extract_collagen_feats(patch, collagen_mask, win_sizes)
+        peri_features = list(peri_dict.values())
+        features.extend(peri_features)
+
 
         file_name = file_name.rsplit('.', 1)[0] + ".csv"
         with open(os.path.join(output_feat_folder, file_name), mode='w', newline='') as file:
@@ -102,12 +103,20 @@ if __name__ == "__main__":
     epi_mask_folder = args.epi_mask
     bg_mask_folder = args.bg_mask
     output_feat_folder = args.output_feature
-    win_sizes = args.win_sizes
 
-    cohorts = os.listdir(patches_folder)
-    for cohort in cohorts:
-        cohort_patch_fold = os.path.join(patches_folder, cohort)
-        cohort_epi_mask_fold = os.path.join(epi_mask_folder, cohort)
-        cohort_bg_mask_fold = os.path.join(bg_mask_folder, cohort)
-        os.makedirs(os.path.join(output_feat_folder, cohort), exist_ok=True)
-        extract_patch_level_features(cohort_patch_fold, cohort_epi_mask_fold, cohort_bg_mask_fold, win_sizes, os.path.join(output_feat_folder, cohort))
+    # win_sizes as list of ints
+    if isinstance(args.win_sizes, str):
+        # e.g. "60 65 70" or "[60,65,70]"
+        cleaned = args.win_sizes.strip("[]").replace(",", " ")
+        win_sizes = [int(x) for x in cleaned.split()]
+    else:
+        win_sizes = [int(x) for x in args.win_sizes]
+
+    os.makedirs(output_feat_folder, exist_ok=True)
+    extract_patch_level_features(
+        patches_folder,
+        epi_mask_folder,
+        bg_mask_folder,
+        win_sizes,
+        output_feat_folder,
+    )
